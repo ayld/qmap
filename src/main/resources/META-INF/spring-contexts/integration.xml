@@ -1,0 +1,38 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:integration="http://www.springframework.org/schema/integration"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:tool="http://www.springframework.org/schema/tool"
+       xmlns:lang="http://www.springframework.org/schema/lang"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans  http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration-2.1.xsd
+           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
+           http://www.springframework.org/schema/tool http://www.springframework.org/schema/tool/spring-tool-2.5.xsd
+           http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang-2.5.xsd">
+    
+    <!-- Channels -->
+    
+    <integration:channel id="usgsChannel"/>
+    <integration:channel id="usgsErrorChannel"/>
+    
+    <!-- Producers -->
+    
+    <integration:inbound-channel-adapter channel="usgsChannel" method="receive" ref="usgsMsgSource">
+        <integration:poller max-messages-per-poll="1" time-unit="SECONDS" fixed-rate="60" error-channel="usgsErrorChannel"/>
+    </integration:inbound-channel-adapter>
+    
+    <!-- Consumers -->
+    
+    <integration:service-activator input-channel="usgsChannel" ref="usgsMsgHandler" auto-startup="true" requires-reply="false"/>
+    <integration:service-activator input-channel="usgsErrorChannel" ref="usgsErrorHandler" auto-startup="true" requires-reply="false"/>
+    
+    <!-- Bean definitions -->
+    
+    <bean id="usgsMsgSource" class="net.qmap.app.core.service.feed.impl.UsgsRssSource"/>
+    
+    <bean id="usgsErrorHandler" class="net.qmap.app.core.service.feed.impl.UsgsErrorHandler"/>
+    <bean id="usgsMsgHandler" class="net.qmap.app.core.service.feed.impl.UsgsMessageHandler">
+		<property name="mapEventDao" ref="mapEventDao"/>
+	</bean>
+</beans>

@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3c.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:f="http://java.sun.com/jsf/core">
+	
+	<h:head>
+		<style type="text/css">
+			.bigeq { background-color:#680000; color:white;} 
+		</style>
+		<script src="http://maps.google.com/maps/api/js?sensor=true" type="text/javascript"></script>
+	</h:head>
+		
+	<h:body>
+		<h:form id="mapForm">
+			Quake Map PoC
+			<table>
+				<tr>
+					<td>
+						<h:outputLabel for="periodDropdown" value="Period:"/>
+						<h:selectOneMenu id="periodDropdown" value="#{mapBean.period}" disabled="#{mapBean.filtersDisabled}">
+							<f:selectItem itemValue="1" itemLabel="1 hour" />
+							<f:selectItem itemValue="2" itemLabel="2 hours" />
+							<f:selectItem itemValue="3" itemLabel="6 hours" />
+							<f:selectItem itemValue="4" itemLabel="12 hours" />
+							<f:selectItem itemValue="5" itemLabel="1 day" />
+							
+							<p:ajax event="change" update="map, table, info"/>
+						</h:selectOneMenu>
+						
+						<h:outputLabel for="magInput" value="Magnitude >= "/>
+						<p:inputText id="magInput" value="#{mapBean.desiredMagnitude}" disabled="#{mapBean.filtersDisabled}"/>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<h:panelGroup id="mapPanel">
+							<p:gmap id="map" center="#{mapBean.mapCenter}" model="#{mapBean.model}" zoom="7" type="TERRAIN" style="width:1024px;height:768px">
+								<p:ajax event="overlaySelect" listener="#{mapBean.onMarkerSelect}" update="info" />
+							</p:gmap>  
+						</h:panelGroup>
+					</td>
+					<td>
+						<h:panelGroup id="info" rendered="true">
+							<h:outputLabel value="Latitude: "/>
+							<h:outputText id="lat" value="#{mapBean.dto.latitude}"/>
+							<br/>
+							<h:outputLabel value="Longitude: "/>
+							<h:outputText id="lon" value="#{mapBean.dto.longitude}"/>
+							<br/>
+							<h:outputLabel value="Magnitude: "/>
+							<h:outputText id="mag" value="#{mapBean.dto.magnitude}"/>
+							<br/>
+							<h:outputLabel value="Location: "/>
+							<h:outputText id="loc" value="#{mapBean.dto.location}"/>
+						</h:panelGroup>
+					</td>
+				</tr>
+			</table>
+			<p:dataTable id="table" var="event" value="#{mapBean.selectableTableEvents}" selectionMode="single" rowStyleClass="#{event.magnitude gt 4.9 ? 'bigeq' : null}">  
+		        <p:column>  
+		            <f:facet name="header">Location</f:facet>
+		            <h:outputText value="#{event.location}" />  
+		        </p:column>  
+		        <p:column>  
+		            <f:facet name="header">Magnitude</f:facet>
+		            <h:outputText value="#{event.magnitude}" />  
+		        </p:column>
+		        
+		        <p:ajax event="rowSelect" listener="#{mapBean.onTableRowSelect}" update=":mapForm:map, :mapForm:info, :mapForm:periodDropdown, :mapForm:magInput"/>
+		        <p:ajax event="rowUnselect" listener="#{mapBean.onTableRowUnselect}" update=":mapForm:periodDropdown, :mapForm:magInput"/>
+    		</p:dataTable>
+		</h:form>
+	</h:body>
+</html>
