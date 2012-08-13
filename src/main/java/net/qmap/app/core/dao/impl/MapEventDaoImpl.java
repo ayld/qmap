@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.base.Strings;
 
 public class MapEventDaoImpl implements MapEventDao {
 
@@ -50,31 +51,33 @@ public class MapEventDaoImpl implements MapEventDao {
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public List<MapEvent> getEventsByPeriodAndMagnitude(EventPeriod period, double minMagnitude) {
-		final String sql = "select * from event where published_date > (current_timestamp - interval '" + PERIODS.get(period) + "') and magnitude >= " + minMagnitude;
+		final String sql = "select id from event where published_date > (current_timestamp - interval '" + PERIODS.get(period) + "') and magnitude >= " + minMagnitude;
 		
-		return eventsFromNativeQuery(sql);
+		final Query sqlQuery = getSession().createSQLQuery(sql);
+		
+		final List<Integer> eventIds = sqlQuery.list();
+		final Query hqlQuery = getSession().createQuery("from MapEvent as me where me.id in (" + idsToInClause(eventIds) + ")");
+		
+		return Optional.fromNullable(hqlQuery.list()).or(new ArrayList<MapEvent>(0));
 	}
 
-	@Override
-	public List<MapEvent> getEventsForPeriod(EventPeriod period) {
-		final String sql = "select * from event where published_date > (current_timestamp - interval '" + PERIODS.get(period) + "')";
+	private String idsToInClause(List<Integer> eventIds) {
+		final StringBuilder resultBuffer = new StringBuilder();
+		final String delimiter = ",";
+		for (Integer id : eventIds) {
+			
+			resultBuffer.append(id).append(delimiter);
+		}
+		String result = resultBuffer.toString();
 		
-		return eventsFromNativeQuery(sql);
-	}
-
-	@Override
-	public List<MapEvent> getLastDayEvents() {
-		final String sql = "select * from event where published_date > (current_timestamp - interval '1 day')";
-		
-		return eventsFromNativeQuery(sql);
-	}
-
-	@Override
-	public List<MapEvent> getLastHourEvents() {
-		final String sql = "select * from event where published_date > (current_timestamp - interval '1 hour')";
-		
-		return eventsFromNativeQuery(sql);
+		final boolean resultsEndsWithDelimiter = Strings.commonSuffix(result, delimiter).length() > 0;
+		if (result.length() > 0 && resultsEndsWithDelimiter) {
+			
+			result = result.substring(0, result.length() - 1);
+		}
+		return result;
 	}
 
 	protected List<MapEvent> eventsFromNativeQuery(final String sql) {
@@ -84,21 +87,22 @@ public class MapEventDaoImpl implements MapEventDao {
 		final List<Object[]> rawResult = Optional.fromNullable((List<Object[]>) query.list()).or(new ArrayList<Object[]>(0));
 		
 		final List<MapEvent> result = Lists.newLinkedList();
+		final Double zero = Double.valueOf(0.0d);
 		for (Object[] row : rawResult) {
 			
 			final MapEvent event = new MapEvent();
 			event.setId((Integer) row[0]);
 			
 			Object rowValue = row[1];
-			final Double latitude = Optional.fromNullable((Double) rowValue).or(Double.valueOf(0.0d));
+			final Double latitude = Optional.fromNullable((Double) rowValue).or(zero);
 			event.setLatitude(latitude);
 			
 			rowValue = row[2];
-			final Double longitude = Optional.fromNullable((Double) rowValue).or(Double.valueOf(0.0d));
+			final Double longitude = Optional.fromNullable((Double) rowValue).or(zero);
 			event.setLongitude(longitude);
 			
 			rowValue = row[3];
-			final Double magnitude = Optional.fromNullable((Double) rowValue).or(Double.valueOf(0.0d));
+			final Double magnitude = Optional.fromNullable((Double) rowValue).or(zero);
 			event.setMagnitude(magnitude);
 			
 			event.setDate(null);
@@ -113,7 +117,6 @@ public class MapEventDaoImpl implements MapEventDao {
 			
 			result.add(event);
 		}
-		
 		return result;
 	}
 

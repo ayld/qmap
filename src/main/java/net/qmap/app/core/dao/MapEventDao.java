@@ -12,13 +12,7 @@ public interface MapEventDao {
 	
 	public MapEvent read(Integer id);
 	
-	public List<MapEvent> getEventsForPeriod(EventPeriod period);
-	
 	public List<MapEvent> getEventsByPeriodAndMagnitude(EventPeriod period, double minMagnitude);
-	
-	public List<MapEvent> getLastDayEvents();
-	
-	public List<MapEvent> getLastHourEvents();
 	
 	public Date getLastEventPublishedDate();
 }
