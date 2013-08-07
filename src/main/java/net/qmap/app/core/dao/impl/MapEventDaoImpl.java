@@ -29,11 +29,11 @@ public class MapEventDaoImpl implements MapEventDao {
 	
 	static {
 		PERIODS = ImmutableMap.of(EventPeriod.DAY, "1 day", 
-				                  EventPeriod.HOUR, "1 hour",
-				                  EventPeriod.TWO_HOURS, "2 hour",
-				                  EventPeriod.SIX_HOURS, "6 hour",
-				                  EventPeriod.TWELVE_HOURS, "12 hour"
-				  				);
+				          EventPeriod.HOUR, "1 hour",
+				          EventPeriod.TWO_HOURS, "2 hour",
+				          EventPeriod.SIX_HOURS, "6 hour",
+				          EventPeriod.TWELVE_HOURS, "12 hour"
+	        );
 		
 	}
 	
